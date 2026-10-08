@@ -1,7 +1,8 @@
 # Local state templates
 
-Create only these three files in the chosen project's `.vibe-wise/`, or its existing
-legacy `.sensible-vibes/` when resuming. Use the directory selected by SKILL.md.
+Create only these three files in the state directory selected by SKILL.md: by
+default `~/Desktop/vibe-wise/<project folder name>/`, or existing in-project
+`.vibe-wise/` or legacy `.sensible-vibes/` notes when resuming.
 Replace bracketed values with actual evidence or “Not specified.” Keep the two
 status lines unformatted and near the top; the restoration hook reads them.
 Do not replace existing state with a fresh template.

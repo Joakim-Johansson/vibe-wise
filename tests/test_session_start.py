@@ -24,9 +24,9 @@ class SessionStartTests(unittest.TestCase):
         self.project.mkdir()
         (self.project / ".git").mkdir()
 
-    def state(self, project=None, mode="active"):
-        directory = (project or self.project) / ".vibe-wise"
-        directory.mkdir()
+    def state(self, project=None, mode="active", directory=None):
+        directory = directory or (project or self.project) / ".vibe-wise"
+        directory.mkdir(parents=True)
         (directory / "profile.md").write_text(
             f"# Learner Profile\nLearning mode: {mode}\nOnboarding: complete\n"
             "Checkpoint frequency: Light\nQuestion style: Open-ended\n"
@@ -43,7 +43,7 @@ class SessionStartTests(unittest.TestCase):
         )
         return directory
 
-    def run_hook(self, cwd=None, source="startup", raw=None):
+    def run_hook(self, cwd=None, source="startup", raw=None, notes_home=None):
         payload = raw if raw is not None else json.dumps({
             "hook_event_name": "SessionStart", "source": source,
             "cwd": str(cwd or self.project),
@@ -56,6 +56,8 @@ class SessionStartTests(unittest.TestCase):
             env={
                 "PATH": os.pathsep.join((str(Path(sys.executable).parent), os.defpath)),
                 "CLAUDE_PLUGIN_ROOT": str(ROOT),
+                # Keep tests away from the developer's real notes folder.
+                "VIBE_WISE_HOME": str(notes_home or self.root / "notes-home"),
             }, cwd=self.root,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -251,6 +253,41 @@ class SessionStartTests(unittest.TestCase):
         self.assertIn("Restarting or compacting is not approval", context)
         self.assertNotIn("Use SQLite", context)
         self.assertNotIn("JSON storage", context)
+
+
+    def external(self, name="project with spaces"):
+        return self.root / "notes-home" / name
+
+    def test_external_notes_restore(self):
+        state = self.state(directory=self.external())
+        self.assertIn(str(state), self.context())
+
+    def test_external_notes_restore_from_nested_working_directory(self):
+        state = self.state(directory=self.external())
+        nested = self.project / "src"
+        nested.mkdir()
+        self.assertIn(str(state), self.context(cwd=nested))
+
+    def test_external_notes_take_precedence_over_project_notes(self):
+        self.state()
+        external = self.state(directory=self.external())
+        context = self.context()
+        self.assertIn(str(external), context)
+        self.assertNotIn(str(self.project / ".vibe-wise"), context)
+
+    def test_external_notes_belong_to_their_own_project(self):
+        self.state(directory=self.external("other project"))
+        self.assertIsNone(self.run_hook())
+
+    def test_symlinked_external_notes_are_not_read(self):
+        target = self.state(directory=self.root / "elsewhere")
+        self.external().parent.mkdir(parents=True)
+        self.external().symlink_to(target, target_is_directory=True)
+        self.assertIsNone(self.run_hook())
+
+    def test_relative_notes_home_is_ignored(self):
+        self.state(directory=self.external())
+        self.assertIsNone(self.run_hook(notes_home="relative/notes"))
 
 
 if __name__ == "__main__":

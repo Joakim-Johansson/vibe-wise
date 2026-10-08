@@ -18,7 +18,7 @@ Do not switch to a subagent or require manual coding by default.
 
 Use the Read tool for plugin guides instead of printing them with Bash `cat`.
 Use Glob to discover optional learner-state files before reading them. A missing
-`.vibe-wise/` directory is normal first-time setup, not an error. If a shell
+state directory is normal first-time setup, not an error. If a shell
 check is necessary, handle absence with an explicit conditional that succeeds;
 don't run `ls` on a possibly missing directory or hide actual read failures.
 Keep guide reads separate from optional state checks so a missing file doesn't
@@ -26,14 +26,25 @@ make a successful instruction read look like a failed tool call.
 
 ## Locate state
 
-Starting at the current working directory, look upward for `.vibe-wise/` or legacy
-`.sensible-vibes/`, preferring `.vibe-wise/` when both exist at the same level,
-stopping at the nearest `.git` directory or file (including a worktree root).
-Use the nearest existing state directory within that boundary. Keep using legacy
-notes in place; never merge, move, or reset them automatically. If there is none,
-create `.vibe-wise/` at the Git root, or current directory without Git. Do not use
-state from a parent repository, another worktree, or the installed plugin folder.
-Do not follow symlinked state directories or files; explain the issue instead.
+Notes live outside the project, so they never end up in the repository.
+
+1. Notes home: the `VIBE_WISE_HOME` environment variable if it is set to an absolute
+   path (check with `printenv VIBE_WISE_HOME`), otherwise `~/Desktop/vibe-wise/`.
+   Ignore a relative `VIBE_WISE_HOME`.
+2. Project key: the folder name of the nearest Git root (the nearest directory
+   upward from the current working directory containing a `.git` directory or
+   file, including a worktree root), or the current directory's name without Git.
+3. State directory: `<notes home>/<project key>/`. Use it if it exists.
+
+If it doesn't exist, fall back to older in-project notes: starting at the current
+working directory, look upward for `.vibe-wise/` or legacy `.sensible-vibes/`,
+preferring `.vibe-wise/` when both exist at the same level, stopping at the Git root.
+Keep using those notes in place; never merge, move, or reset them automatically.
+
+If neither exists, create `<notes home>/<project key>/`, creating the notes home
+if needed. Never create notes inside the project. Do not use state from a parent
+repository, another worktree, or the installed plugin folder. Do not follow
+symlinked state directories or files; explain the issue instead.
 
 If `profile.md` exists, read it and `project-map.md`. Search the entire `progress.md`
 for pending decisions, then read their complete sections and other topics relevant

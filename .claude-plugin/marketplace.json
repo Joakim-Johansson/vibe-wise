@@ -1,6 +1,8 @@
 {
-  "name": "vibe-wise",
-  "owner": { "name": "Noah Kim" },
+  "name": "joakim-vibe-wise",
+  "owner": {
+    "name": "Joakim Johansson"
+  },
   "metadata": {
     "description": "VibeWise: learn how to build while AI writes the code."
   },

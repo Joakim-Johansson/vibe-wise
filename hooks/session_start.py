@@ -7,6 +7,7 @@ The events that trigger it (including compaction) are configured in hooks.json.
 """
 
 import json
+import os
 from pathlib import Path
 import re
 import sys
@@ -37,7 +38,41 @@ def profile_is_active(path):
     return has_content
 
 
-def state_directory(cwd):
+def notes_home():
+    """Folder outside every project that holds one notes folder per project."""
+    # VIBE_WISE_HOME overrides the default, e.g. to point into an Obsidian vault.
+    raw = os.environ.get("VIBE_WISE_HOME", "").strip()
+    if raw:
+        home = Path(raw).expanduser()
+        # A relative path would depend on where the hook happened to start.
+        return home if home.is_absolute() else None
+    try:
+        return Path.home() / "Desktop" / "vibe-wise"
+    except RuntimeError:
+        return None
+
+
+def project_root(cwd):
+    """The nearest Git root (directory or worktree file), or cwd without Git."""
+    for directory in (cwd, *cwd.parents):
+        if (directory / ".git").exists():
+            return directory
+    return cwd
+
+
+def external_state_directory(cwd):
+    """Notes kept outside the project, in <notes home>/<project folder name>."""
+    home = notes_home()
+    if home is None:
+        return None
+    state = home / project_root(cwd).name
+    if state.exists() or state.is_symlink():
+        # Same rule as in-project notes: never follow a linked state directory.
+        return state if state.is_dir() and not state.is_symlink() else None
+    return None
+
+
+def project_state_directory(cwd):
     """Find the nearest notes directory without crossing a Git project boundary."""
     # Starting in a source subdirectory should still find the project's notes.
     for directory in (cwd, *cwd.parents):
@@ -52,6 +87,11 @@ def state_directory(cwd):
         if (directory / ".git").exists():
             break
     return None
+
+
+def state_directory(cwd):
+    """Prefer notes outside the project; fall back to older in-project notes."""
+    return external_state_directory(cwd) or project_state_directory(cwd)
 
 
 def restore(payload):

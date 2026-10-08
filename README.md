@@ -211,7 +211,7 @@ are with the stack. Checkpoint frequency—Light, Normal, or Frequent—is separ
 - “Just implement this one.”
 - “Pause learning.” Resume with `/vibe-wise:learn`.
 
-Preferences, learning notes, and a project map live in `.vibe-wise/` in your project. Learning mode resumes in future sessions and after compaction. Add `.vibe-wise/` to your `.gitignore` to keep your notes out of Git; the plugin won't change it silently.
+Preferences, learning notes, and a project map live outside your project, in `~/Desktop/vibe-wise/<project folder name>/`, so they never end up in Git. Set the `VIBE_WISE_HOME` environment variable to an absolute path to keep them somewhere else, for example a folder in your Obsidian vault. Projects with older notes in `.vibe-wise/` keep using them until notes exist in the new location. Learning mode resumes in future sessions and after compaction.
 
 No extra account, backend, or telemetry. Saved notes are included in Claude's context, so your normal Claude Code data settings still apply.
 
